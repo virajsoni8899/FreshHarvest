@@ -10,4 +10,3 @@ plotly
 tqdm
 scikit-learn
 -f constraints.txt
-
