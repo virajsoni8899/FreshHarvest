@@ -8,4 +8,4 @@ seaborn
 Pillow
 plotly
 tqdm
-scikit-learn=
+scikit-learn
