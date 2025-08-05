@@ -7,6 +7,7 @@ from PIL import Image
 import numpy as np
 import plotly.express as px
 import pandas as pd
+import os
 
 # Page configuration
 st.set_page_config(
@@ -97,14 +98,65 @@ def load_model():
             nn.Linear(256, len(CLASSES))
         )
 
-        # Load trained weights
-        try:
-            model.load_state_dict(torch.load('best_resnet50_cpu.pth', map_location='cpu'))
-            st.success("✅ Model loaded successfully!")
-        except FileNotFoundError:
-            st.error(
-                "❌ Model file 'best_resnet50_cpu.pth' not found. Please ensure the model file is in the same directory.")
-            st.info("💡 You can train the model using the provided training script first.")
+        # Try multiple model file names and locations
+        model_paths = [
+            'best_resnet50_cpu.pth'
+        ]
+
+        model_loaded = False
+        for model_path in model_paths:
+            try:
+                if os.path.exists(model_path):
+                    model.load_state_dict(torch.load(model_path, map_location='cpu'))
+                    st.success(f"✅ Model loaded successfully from: {model_path}")
+                    model_loaded = True
+                    break
+            except Exception as e:
+                continue
+
+        # If local files not found, try downloading from URL (optional)
+        if not model_loaded:
+            try:
+                # Uncomment and modify this section if you want to download model from URL
+                # model_url = "https://your-hosted-model-url/resnet_50_model.pth"
+                # import urllib.request
+                # st.info("📥 Downloading model from URL...")
+                # urllib.request.urlretrieve(model_url, "resnet_50_model.pth")
+                # model.load_state_dict(torch.load("resnet_50_model.pth", map_location='cpu'))
+                # st.success("✅ Model downloaded and loaded successfully!")
+                # model_loaded = True
+                pass
+            except Exception as e:
+                st.warning(f"Could not download model: {str(e)}")
+
+        if not model_loaded:
+            st.error("❌ Model file not found. Please ensure your model file is uploaded to the repository.")
+            st.info("""
+            💡 **For Streamlit Cloud deployment:**
+            1. Upload your model file (e.g., `resnet_50_model.pth`) to your GitHub repository
+            2. Make sure the file is in the root directory or create a `models/` folder
+            3. Common model file names: `best_resnet50_cpu.pth`, `resnet_50_model.pth`, `model.pth`
+            4. File size limit: 100MB for GitHub (use Git LFS for larger files)
+
+            **Alternative options:**
+            - Use Git LFS for files > 100MB
+            - Host model on Google Drive/Dropbox and download in app
+            - Use Hugging Face Model Hub
+            """)
+
+            # Show available files for debugging
+            st.write("📁 **Available files in current directory:**")
+            try:
+                files = os.listdir('.')
+                st.write("All files:", files)
+                model_files = [f for f in files if f.endswith(('.pth', '.pt', '.pkl'))]
+                if model_files:
+                    st.write("Model files found:", model_files)
+                else:
+                    st.write("No model files (.pth, .pt, .pkl) found")
+            except Exception as e:
+                st.write(f"Could not list directory contents: {str(e)}")
+
             return None
 
         model.eval()
